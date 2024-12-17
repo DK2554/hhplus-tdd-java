@@ -10,6 +10,12 @@ import java.util.List;
 @RequestMapping("/point")
 public class PointController {
 
+    private final PointServiceImpl pointService;
+
+    public PointController(PointServiceImpl pointService) {
+        this.pointService = pointService;
+    }
+
     private static final Logger log = LoggerFactory.getLogger(PointController.class);
 
     /**
@@ -40,7 +46,7 @@ public class PointController {
             @PathVariable long id,
             @RequestBody long amount
     ) {
-        return new UserPoint(0, 0, 0);
+        return pointService.chargeUserPoint(id, amount);
     }
 
     /**
