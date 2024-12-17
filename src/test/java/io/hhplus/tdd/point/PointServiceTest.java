@@ -11,8 +11,7 @@
 
     import static org.junit.jupiter.api.Assertions.*;
     import static org.mockito.ArgumentMatchers.*;
-    import static org.mockito.Mockito.verify;
-    import static org.mockito.Mockito.when;
+    import static org.mockito.Mockito.*;
 
     @ExtendWith(MockitoExtension.class)
     public class PointServiceTest {
@@ -115,6 +114,73 @@
             //예외 메세지 검증
             assertEquals("잔고가 초과 되었습니다 포인트는 "+ MAX_AMOUNT +"을 초과할 수 없습니다.", exception.getMessage());
         }
+
+        @Test
+        @DisplayName("포인트 충전시 최대잔고를 초과했을 경우 예외")
+        public void 사용자_조회(){
+            // given: 테스트에 필요한 입력값과 초기 상태 설정
+            long userId = 1L; //일치하지 않는 사용자 값
+            long point = 10;
+
+            // 초기 사용자 정보: ID와 보유 포인트를 포함한 UserPoint 객체 생성
+            UserPoint initialUserPoint = new UserPoint(userId, point, System.currentTimeMillis());
+            // userPointTable.selectById(userId)가 초기 사용자 정보를 반환하도록 설정
+            when(userPointTable.selectById(userId)).thenReturn(initialUserPoint);
+
+            UserPoint successUser = pointService.findByUserId(userId);
+
+            // then: 반환된 결과 검증
+            assertNotNull(successUser);
+            assertEquals(successUser.id(), userId);
+            assertEquals(successUser.point(), 10);
+
+            // verify: userPointTable.selectById(userId)가 정확히 한 번 호출되었는지 검증
+            verify(userPointTable).selectById(eq(userId));
+        }
+
+        @Test
+        @DisplayName("사용자 조회 실패_존재하지 않는 사용자")
+        public void 사용자_조회_실패_존재하지않음() {
+            // given: 존재하지 않는 사용자 ID 설정
+            long userId = 2L; // 존재하지 않는 사용자 ID
+
+            // userPointTable.selectById()가 null 반환
+            when(userPointTable.selectById(userId)).thenReturn(null);
+
+            // when & then: 예외가 발생하는지 검증
+            IllegalArgumentException exception = assertThrows(
+                    IllegalArgumentException.class,
+                    () -> pointService.findByUserId(userId)
+            );
+
+            // 예외 메시지 검증
+            assertEquals("유저가 존재하지 않습니다.", exception.getMessage(),
+                    "예외 메시지가 예상과 다릅니다.");
+
+            // selectById 메서드가 정확히 호출되었는지 검증
+            verify(userPointTable).selectById(eq(userId));
+        }
+        @Test
+        @DisplayName("사용자 조회 실패_잘못된 사용자 ID")
+        public void 사용자_조회_실패_잘못된ID() {
+            // given: 잘못된 사용자 ID 설정
+            long userId = -1L; // 유효하지 않은 사용자 ID
+
+            // when & then: 잘못된 ID로 메서드를 호출 시 예외 발생 검증
+            IllegalArgumentException exception = assertThrows(
+                    IllegalArgumentException.class,
+                    () -> pointService.findByUserId(userId)
+            );
+
+            // 예외 메시지 검증
+            assertEquals("유효하지 않은 사용자 ID입니다.", exception.getMessage(),
+                    "예외 메시지가 예상과 다릅니다.");
+
+            // selectById 메서드가 호출되지 않았는지 검증
+            verify(userPointTable, never()).selectById(anyLong());
+        }
+
+
 
 
     }

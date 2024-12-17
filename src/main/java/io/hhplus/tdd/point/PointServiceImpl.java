@@ -46,4 +46,18 @@ public class PointServiceImpl implements PointService{
         return updateUser;
     }
 
+    @Override
+    public UserPoint findByUserId(long id) {
+
+        if(id < 0){
+            throw new IllegalArgumentException("유효하지 않은 사용자 ID입니다.");
+        }
+
+        UserPoint userPoint = userPointTable.selectById(id);
+        if(userPoint == null){
+            throw new IllegalArgumentException("유저가 존재하지 않습니다.");
+        }
+        return userPoint;
+    }
+
 }

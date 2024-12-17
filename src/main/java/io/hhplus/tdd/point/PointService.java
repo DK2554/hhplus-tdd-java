@@ -4,4 +4,6 @@ import java.util.List;
 
 public interface PointService {
     UserPoint chargeUserPoint(long userId, long amount);
+
+    UserPoint findByUserId(long id);
 }
