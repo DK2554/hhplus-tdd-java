@@ -60,4 +60,12 @@ public class PointServiceImpl implements PointService{
         return userPoint;
     }
 
+    @Override
+    public List<PointHistory> findUserPointsById(long id) {
+        if(id < 0){
+            throw new IllegalArgumentException("유효하지 않은 사용자 ID입니다.");
+        }
+        return pointHistoryTable.selectAllByUserId(id);
+    }
+
 }
