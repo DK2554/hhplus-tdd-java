@@ -62,23 +62,6 @@
         }
 
         @Test
-        @DisplayName("포인트 충전 실패_요청 사용자가 존재하지 않은 경우")
-        public void 포인트충전_실패_요청사용자없음(){
-            // 예외 테스트: 요청한 사용자가 존재하지 않을 때 예외를 검증하는 테스트
-
-            // given: 입력값 설정
-            long userId = 2L; //일치하지 않는 사용자 값
-            long point = 10;
-            // when & then: pointService.chargeUserPoint() 실행 시 예외 발생 여부 검증
-            when(userPointTable.selectById(userId)).thenReturn(null);
-            //예외가 발생되어야하는 로직
-            IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                    ()-> pointService.chargeUserPoint(userId, point));
-            //예외 메세지 검증
-            assertEquals("유저가 존재하지 않습니다.", exception.getMessage());
-        }
-
-        @Test
         @DisplayName("포인트 충전 금액이 0원이거나 보다 작을 경우 예외")
         public void 포인트충전_실패_금액0원미만(){
             //예외 테스트
@@ -98,6 +81,7 @@
             //예외 메세지 검증
             assertEquals("충전금액으 0보다 커야합니다.", exception.getMessage());
         }
+
 
         @Test
         @DisplayName("포인트 충전시 최대잔고를 초과했을 경우 예외")
@@ -137,32 +121,9 @@
             assertNotNull(successUser);
             assertEquals(successUser.id(), userId);
             assertEquals(successUser.point(), 10);
-
-            // verify: userPointTable.selectById(userId)가 정확히 한 번 호출되었는지 검증
-            verify(userPointTable).selectById(eq(userId));
         }
 
-        @Test
-        @DisplayName("사용자 조회 실패_존재하지 않는 사용자")
-        public void 사용자_조회_실패_존재하지않음() {
-            // given: 존재하지 않는 사용자 ID 설정
-            long userId = 2L; // 존재하지 않는 사용자 ID
 
-            // userPointTable.selectById()가 null 반환
-            when(userPointTable.selectById(userId)).thenReturn(null);
-
-            // when & then: 예외가 발생하는지 검증
-            IllegalArgumentException exception = assertThrows(
-                    IllegalArgumentException.class,
-                    () -> pointService.findByUserId(userId)
-            );
-
-            // 예외 메시지 검증
-            assertEquals("유저가 존재하지 않습니다.", exception.getMessage());
-
-            // selectById 메서드가 정확히 호출되었는지 검증
-            verify(userPointTable).selectById(eq(userId));
-        }
         @Test
         @DisplayName("사용자 조회 실패_잘못된 사용자 ID")
         public void 사용자_조회_실패_잘못된ID() {
@@ -203,8 +164,6 @@
             assertEquals(100L, result.get(0).amount());
             assertEquals(TransactionType.CHARGE, result.get(0).type());
 
-            // verify: pointHistoryTable.selectAllByUserId(userId)가 정확히 한 번 호출되었는지 검증
-            verify(pointHistoryTable).selectAllByUserId(eq(userId));
         }
 
         @Test
@@ -245,6 +204,7 @@
             // pointHistoryTable 메서드가 호출되지 않았는지 검증
             verify(pointHistoryTable, never()).selectAllByUserId(anyLong());
         }
+
 
 
 

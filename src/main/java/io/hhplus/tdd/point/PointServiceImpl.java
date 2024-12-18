@@ -25,10 +25,6 @@ public class PointServiceImpl implements PointService{
 
         UserPoint userPoint = userPointTable.selectById(userId);
 
-        if(userPoint == null){
-            throw new IllegalArgumentException("유저가 존재하지 않습니다.");
-        }
-
         if(amount <= MIN_AMOUNT){
             throw new IllegalArgumentException("충전금액으 0보다 커야합니다.");
         }
@@ -53,11 +49,7 @@ public class PointServiceImpl implements PointService{
             throw new IllegalArgumentException("유효하지 않은 사용자 ID입니다.");
         }
 
-        UserPoint userPoint = userPointTable.selectById(id);
-        if(userPoint == null){
-            throw new IllegalArgumentException("유저가 존재하지 않습니다.");
-        }
-        return userPoint;
+        return userPointTable.selectById(id);
     }
 
     @Override
@@ -67,5 +59,7 @@ public class PointServiceImpl implements PointService{
         }
         return pointHistoryTable.selectAllByUserId(id);
     }
+
+
 
 }
