@@ -8,4 +8,6 @@ public interface PointService {
     UserPoint findByUserId(long id);
 
     List<PointHistory> findUserPointsById(long id);
+
+    UserPoint useUserPoint(long id, long amount);
 }

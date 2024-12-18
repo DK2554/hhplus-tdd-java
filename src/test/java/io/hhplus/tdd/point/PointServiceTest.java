@@ -205,6 +205,97 @@
             verify(pointHistoryTable, never()).selectAllByUserId(anyLong());
         }
 
+        @Test
+        @DisplayName("포인트 충전 성공")
+        public void 포인트사용_성공(){
+            // given: 테스트에 필요한 데이터 준비
+            long userId = 1L; // 사용자 ID
+            long point = 50L; // 사용할 포인트
+
+            // 초기 사용자 포인트 상태: 100L
+            UserPoint initialUserPoint = new UserPoint(userId, 100L, System.currentTimeMillis());
+
+            // 포인트 사용 후 상태: 100L - 50L = 50L
+            UserPoint updatedUserPoint = new UserPoint(userId, 50L, System.currentTimeMillis());
+
+            // 포인트 사용 기록: 트랜잭션 타입 USE로 저장될 기록
+            PointHistory expectedHistory = new PointHistory(1, userId, point, TransactionType.USE, System.currentTimeMillis());
+
+            // Stubbing: Mock 객체의 동작 정의
+            // 사용자 조회 시 초기 포인트 반환
+            when(userPointTable.selectById(eq(userId))).thenReturn(initialUserPoint);
+            // 포인트 사용 후 업데이트된 포인트 상태 반환
+            when(userPointTable.insertOrUpdate(eq(userId), eq(initialUserPoint.point() - point))).thenReturn(updatedUserPoint);
+            // 포인트 사용 기록 저장 후 기록 반환
+            when(pointHistoryTable.insert(eq(userId), eq(point), eq(TransactionType.USE), anyLong())).thenReturn(expectedHistory);
+
+            // when: 실제 테스트 대상 메서드 실행
+            UserPoint successUser = pointService.useUserPoint(userId, point);
+
+            // then: 결과 검증
+            // 반환된 UserPoint 객체가 null이 아님을 확인
+            assertNotNull(successUser, "UserPoint 객체는 null이 아니어야 합니다.");
+            // 반환된 사용자 ID가 일치하는지 확인
+            assertEquals(successUser.id(), userId, "사용자 ID가 일치하지 않습니다.");
+            // 반환된 포인트 값이 예상과 일치하는지 확인
+            assertEquals(successUser.point(), 50L, "포인트 값이 예상과 다릅니다.");
+
+            // then: Mock 메서드 호출 검증
+            // 사용자 포인트 조회가 정확히 한 번 호출되었는지 확인
+            verify(userPointTable).selectById(eq(userId));
+            // 사용자 포인트 업데이트가 정확히 한 번 호출되었는지 확인
+            verify(userPointTable).insertOrUpdate(eq(userId), eq(initialUserPoint.point() - point));
+            // 포인트 사용 기록 저장이 정확히 한 번 호출되었는지 확인
+            verify(pointHistoryTable).insert(eq(userId), eq(point), eq(TransactionType.USE), anyLong());
+        }
+
+        @Test
+        @DisplayName("포인트 사용 금액이 0원이거나 보다 작을 경우 예외")
+        public void 포인트사용_실패_금액0원미만(){
+            //예외 테스트
+
+            // given: 테스트에 필요한 입력값 설정
+            long userId = 1L; //일치하지 않는 사용자 값
+            long point = 0; //충전 금액이 0원 (잘못된 입력)
+
+            // userPointTable.selectById() 호출 시 초기 사용자 포인트 반환하도록 Mock 설정
+            UserPoint initialUserPoint = new UserPoint(userId, 100L, System.currentTimeMillis());
+            // when & then: 충전 금액이 0원 이하일 경우 예외 발생 검증
+            when(userPointTable.selectById(userId)).thenReturn(initialUserPoint);
+            IllegalArgumentException exception = assertThrows(
+                    IllegalArgumentException.class,
+                    () -> pointService.useUserPoint(userId, point)
+            );
+            //예외 메세지 검증
+            assertEquals("사용금액은 0보다 커야합니다.", exception.getMessage());
+        }
+
+        @Test
+        @DisplayName("사용하는 포인트가 잔고를 초과한경우")
+        public void 포인트사용_실패_잔고금액부족(){
+            //예외 테스트
+
+            long userId = 1L; //일치하지 않는 사용자 값
+            long point = 101;
+            long MAX_AMOUNT = 100L;
+            // 사용자의 초기 포인트 상태를 설정 (이미 최대 잔액인 10000L)
+            UserPoint initialUserPoint = new UserPoint(userId, MAX_AMOUNT, System.currentTimeMillis());
+            // Stubbing: userPointTable.selectById()가 초기 사용자 포인트 반환
+            when(userPointTable.selectById(userId)).thenReturn(initialUserPoint);
+            // 보유잔고보다 사용하는 포인트가 초과한경우 예외 발생
+            IllegalArgumentException exception = assertThrows(
+                    IllegalArgumentException.class,
+                    () -> pointService.useUserPoint(userId, point)
+            );
+            //예외 메세지 검증
+            assertEquals("잔고에 금액이 부족합니다", exception.getMessage());
+        }
+
+
+
+
+
+
 
 
 

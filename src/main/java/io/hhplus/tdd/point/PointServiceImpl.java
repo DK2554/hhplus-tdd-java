@@ -62,4 +62,28 @@ public class PointServiceImpl implements PointService{
 
 
 
+    @Override
+    public UserPoint useUserPoint(long userId, long amount) {
+
+        UserPoint userPoint = userPointTable.selectById(userId);
+
+        if(amount <= MIN_AMOUNT) {
+            throw new IllegalArgumentException("사용금액은 0보다 커야합니다.");
+        }
+
+        long updateAmount = userPoint.point() - amount;
+        // 최대 잔고 초과 여부 확인
+
+        if(updateAmount < 0){
+            throw new IllegalArgumentException("잔고에 금액이 부족합니다");
+        }
+
+        UserPoint updateUser =  userPointTable.insertOrUpdate(userId, updateAmount);
+
+        pointHistoryTable.insert(userId, amount, TransactionType.USE, System.currentTimeMillis());
+
+        return updateUser;
+    }
+
+
 }
