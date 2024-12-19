@@ -5,4 +5,5 @@ import java.util.List;
 public interface PointService {
     UserPoint findByUserId(long id);
     List<PointHistory> findUserPointsById(long id);
+    UserPoint chargeUserPoint(long id, long amount);
 }
