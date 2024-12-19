@@ -10,9 +10,9 @@ import java.util.List;
 @RequestMapping("/point")
 public class PointController {
 
-    private final PointServiceImpl pointService;
+    private final PointService pointService;
 
-    public PointController(PointServiceImpl pointService) {
+    public PointController(PointService pointService) {
         this.pointService = pointService;
     }
 
@@ -23,7 +23,7 @@ public class PointController {
      */
     @GetMapping("{id}")
     public UserPoint point(
-            @PathVariable long id
+            @PathVariable(name = "id") long id
     ) {
         return pointService.findByUserId(id);
     }
@@ -33,7 +33,7 @@ public class PointController {
      */
     @GetMapping("{id}/histories")
     public List<PointHistory> history(
-            @PathVariable long id
+            @PathVariable(name = "id") long id
     ) {
         return pointService.findUserPointsById(id);
     }
@@ -43,7 +43,7 @@ public class PointController {
      */
     @PatchMapping("{id}/charge")
     public UserPoint charge(
-            @PathVariable long id,
+            @PathVariable(name = "id") long id,
             @RequestBody long amount
     ) {
         return pointService.chargeUserPoint(id, amount);
@@ -54,7 +54,7 @@ public class PointController {
      */
     @PatchMapping("{id}/use")
     public UserPoint use(
-            @PathVariable long id,
+            @PathVariable(name = "id") long id,
             @RequestBody long amount
     ) {
         return pointService.useUserPoint(id, amount);
