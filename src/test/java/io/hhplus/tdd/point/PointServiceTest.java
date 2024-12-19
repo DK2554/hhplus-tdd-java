@@ -13,8 +13,10 @@
     import java.util.Collections;
     import java.util.List;
 
+    import static org.assertj.core.api.Assertions.assertThat;
     import static org.junit.jupiter.api.Assertions.*;
-    import static org.mockito.ArgumentMatchers.*;
+    import static org.mockito.ArgumentMatchers.anyLong;
+    import static org.mockito.ArgumentMatchers.eq;
     import static org.mockito.Mockito.*;
 
     @ExtendWith(MockitoExtension.class)
@@ -28,7 +30,7 @@
 
         @Test
         @DisplayName("포인트 충전 성공")
-        public void 포인트충전_성공(){
+        public void 기존_포인트100포인트를_가진사용자가100포인트를_충전하면_잔금_포인트가_200포인트여야한다(){
             // given: 테스트에 필요한 데이터 준비
             long userId = 1L;
             long point = 100;
@@ -42,19 +44,20 @@
 
             // when: 메서드 실행 전에 필요한 Mock 객체의 행동 정의
             when(userPointTable.selectById(eq(userId))).thenReturn(initialUserPoint);
-            when(userPointTable.insertOrUpdate(eq(userId), eq(point))).thenReturn(updatedUserPoint);
+            when(userPointTable.insertOrUpdate(eq(userId), eq(initialUserPoint.point() + point)))
+                    .thenReturn(updatedUserPoint);
             when(pointHistoryTable.insert(eq(userId), eq(point), eq(TransactionType.CHARGE), anyLong())).thenReturn(expectedHistory);
             // when: 실제 테스트 대상 메서드 실행
             UserPoint successUser = pointService.chargeUserPoint(userId, point);
             // then: 결과 검증 - 반환된 UserPoint 객체가 예상과 일치하는지 확인
-            assertNotNull(successUser);
-            assertEquals(successUser.id(), userId);
-            assertEquals(successUser.point(), 200);
+            assertThat(successUser).isNotNull();
+            assertThat(successUser.id()).isEqualTo(userId);
+            assertThat(successUser.point()).isEqualTo(initialUserPoint.point() + point);
 
             // then: 메서드 호출 검증 - Mock 객체의 메서드가 예상대로 호출되었는지 확인
             verify(userPointTable).selectById(eq(userId));
             // 사용자 포인트 조회 메서드가 정상적으로 호출되었는지 검증
-            verify(userPointTable).insertOrUpdate(eq(userId), eq(point));
+            verify(userPointTable).insertOrUpdate(eq(userId), eq(initialUserPoint.point() + point));
             // 포인트 업데이트 메서드가 정상적으로 호출되었는지 검증
             verify(pointHistoryTable).insert(eq(userId), eq(point), eq(TransactionType.CHARGE), anyLong());
             // 포인트 이력 기록 메서드가 정상적으로 호출되었는지 검증
@@ -63,7 +66,7 @@
 
         @Test
         @DisplayName("포인트 충전 금액이 0원이거나 보다 작을 경우 예외")
-        public void 포인트충전_실패_금액0원미만(){
+        public void 포인트를_충전하려는_금액이0원미만이면_포인트충전에서_IllegalArgumentException예외가발생해야한다(){
             //예외 테스트
 
             // given: 테스트에 필요한 입력값 설정
@@ -85,7 +88,7 @@
 
         @Test
         @DisplayName("포인트 충전시 최대잔고를 초과했을 경우 예외")
-        public void 포인트전트_실패_최대잔고초과(){
+        public void 포인트를_충전하려는금액이_보유_최대잔금을_초과하면_포인트충전에서_IllegalArgumentException예외가_발생해야한다(){
             // 예외 테스트: 충전 시 포인트가 최대 잔액을 초과하는 경우 예외 발생 여부를 검증
             // given: 테스트에 필요한 입력값 및 초기 상태 설정
             long userId = 1L; //일치하지 않는 사용자 값
@@ -99,13 +102,13 @@
                     IllegalArgumentException.class,
                     () -> pointService.chargeUserPoint(userId, point)
             );
-            //예외 메세지 검증
+            // 예외 메세지 검증
             assertEquals("잔고가 초과 되었습니다 포인트는 "+ MAX_AMOUNT +"을 초과할 수 없습니다.", exception.getMessage());
         }
 
         @Test
         @DisplayName("사용자 정상 조회")
-        public void 사용자_조회(){
+        public void 사용자가1L인_사용자를_조회하면_해당사용자의_UserPoint가_반환된다(){
             // given: 테스트에 필요한 입력값과 초기 상태 설정
             long userId = 1L; //일치하지 않는 사용자 값
             long point = 10;
@@ -126,7 +129,7 @@
 
         @Test
         @DisplayName("사용자 조회 실패_잘못된 사용자 ID")
-        public void 사용자_조회_실패_잘못된ID() {
+        public void 잘못된_사용자를_조회할경우_IllegalArgumentException_예외가_발생하고_메세지는_유효하지않은_사용자ID입니다_를반환해야한다() {
             // given: 잘못된 사용자 ID 설정
             long userId = -1L; // 유효하지 않은 사용자 ID
 
@@ -145,10 +148,10 @@
 
         @Test
         @DisplayName("사용자의 포인트 내역을 조회한다.")
-        public void 사용자_포인트_내역조회(){
+        public void 특정사용자의_충전포인트_내역을_조회한다(){
             // given: 테스트에 필요한 입력값과 초기 상태 설정
             long userId = 1L; //일치하지 않는 사용자 값
-            long point = 10;
+
             // 포인트 히스토리 목록 설정
             List<PointHistory> pointList = new ArrayList<>();
             pointList.add(new PointHistory(1, userId, 100L, TransactionType.CHARGE, System.currentTimeMillis()));
@@ -168,7 +171,7 @@
 
         @Test
         @DisplayName("포인트 히스토리 조회 조회 결과 없음")
-        public void 포인트_히스토리_조회_결과없음() {
+        public void 특정사용자의포인트내역을조회했을때내역이없으면빈조회결과를반환한다() {
             // given: 존재하지 않는 사용자 ID
             long userId = 999L;
 
@@ -188,7 +191,7 @@
 
         @Test
         @DisplayName("포인트 히스토리 조회 실패_잘못된 사용자 ID")
-        public void 포인트_히스토리_조회_잘못된_사용자ID() {
+        public void 포인트내역_조회시_잘못된_사용자음수사용자ID인경우_예외를_발생해야하며_메세지는_유효하지않은_사용자ID입니다를_반환한다() {
             // given: 잘못된 사용자 ID
             long userId = -1L;
 
@@ -207,7 +210,7 @@
 
         @Test
         @DisplayName("포인트 충전 성공")
-        public void 포인트사용_성공(){
+        public void 잔금100포인트를가진_특정사용자가_50포인트를_사용했을경우_잔금50포인트를반환해야한다(){
             // given: 테스트에 필요한 데이터 준비
             long userId = 1L; // 사용자 ID
             long point = 50L; // 사용할 포인트
@@ -251,12 +254,10 @@
 
         @Test
         @DisplayName("포인트 사용 금액이 0원이거나 보다 작을 경우 예외")
-        public void 포인트사용_실패_금액0원미만(){
-            //예외 테스트
-
+        public void 포인트사용_금액이_0원미만이면_IllegalArgumentException예외가_발생하며_사용금액은_0보다_커야합니다를반환한다(){
             // given: 테스트에 필요한 입력값 설정
             long userId = 1L; //일치하지 않는 사용자 값
-            long point = 0; //충전 금액이 0원 (잘못된 입력)
+            long point = -1; //충전 금액이 0원 (잘못된 입력)
 
             // userPointTable.selectById() 호출 시 초기 사용자 포인트 반환하도록 Mock 설정
             UserPoint initialUserPoint = new UserPoint(userId, 100L, System.currentTimeMillis());
@@ -272,7 +273,7 @@
 
         @Test
         @DisplayName("사용하는 포인트가 잔고를 초과한경우")
-        public void 포인트사용_실패_잔고금액부족(){
+        public void 특정사용자가_잔금이100인상태에서_101인금액을_사용하려고하면_IllegalArgumentException예외를발생하며_메세지는_잔고에_금액이_부족합니다를_반환한다() {
             //예외 테스트
 
             long userId = 1L; //일치하지 않는 사용자 값
@@ -290,14 +291,4 @@
             //예외 메세지 검증
             assertEquals("잔고에 금액이 부족합니다", exception.getMessage());
         }
-
-
-
-
-
-
-
-
-
-
     }
