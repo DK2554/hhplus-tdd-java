@@ -13,6 +13,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @SpringBootTest
@@ -27,7 +28,7 @@ public class ConcurrencyTest {
 
 
     @Test
-    @DisplayName("chargeUserPoint - 동시성 문제 해결 테스트")
+    @DisplayName("사용자가100포인트충전을연속적으로요청했을경우정상적으로5500포인트가충전되어야한다")
     public void 사용자가100포인트충전을연속적으로요청했을경우정상적으로5500포인트가충전되어야한다() throws InterruptedException {
         long userId = 1L;
         long initialPoint = 500L;
@@ -56,11 +57,11 @@ public class ConcurrencyTest {
         long actualTotal = userPointTable.selectById(userId).point();
 
         System.out.println("최종 포인트: " + actualTotal + ", 예상 포인트: " + expectedTotal);
-        assertEquals(expectedTotal, actualTotal, "동시성 문제로 인해 최종 포인트 값이 예상과 다릅니다.");
+        assertThat(expectedTotal).isEqualTo(actualTotal);
     }
 
     @Test
-    @DisplayName("useUserPoint - 동시성 문제 해결 테스트")
+    @DisplayName("사용자가100포인트사용을연속적으로요청했을경우정상적으로잔금에서포인트가차감되어야한다")
     public void 사용자가100포인트사용을연속적으로요청했을경우정상적으로잔금에서포인트가차감되어야한다() throws InterruptedException {
         long userId = 1L;
         long initialPoint = 5000L;
@@ -89,7 +90,7 @@ public class ConcurrencyTest {
         long actualTotal = userPointTable.selectById(userId).point();
 
         System.out.println("최종 포인트: " + actualTotal + ", 예상 포인트: " + expectedTotal);
-        assertEquals(expectedTotal, actualTotal, "동시성 문제로 인해 최종 포인트 값이 예상과 다릅니다.");
+        assertThat(expectedTotal).isEqualTo(actualTotal);
     }
 
     @Test
@@ -145,7 +146,7 @@ public class ConcurrencyTest {
             long expectedTotal = userPointsTracker.get(userId); // 동적으로 계산된 예상 포인트
             long actualTotal = userPointTable.selectById(userId).point(); // 실제 포인트
             System.out.println("사용자 " + i + " - 최종 포인트: " + actualTotal + ", 예상 포인트: " + expectedTotal);
-            assertEquals(expectedTotal, actualTotal, "사용자 " + i + "의 최종 포인트가 예상과 다릅니다.");
+            assertThat(expectedTotal).isEqualTo(actualTotal);
         }
     }
 
